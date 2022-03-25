@@ -7,8 +7,8 @@ import (
 )
 
 const (
-	help  = "help"
-	login = "login"
+	Help  = "Help"
+	Login = "Login"
 )
 
 var locationKeyboard = tgbotapi.NewInlineKeyboardMarkup(
@@ -27,21 +27,20 @@ func init() {
 
 func HandleCommand(message *tgbotapi.Message) {
 	switch message.Command() {
-	case help:
-		msg := tgbotapi.NewMessage(message.Chat.ID, "Use /login your_email command to login your boox account first, then you can send or forward your book to this boot.")
+	case Help:
+		msg := tgbotapi.NewMessage(message.Chat.ID, "Use /Login your_email command to Login your boox account first, then you can send or forward your book to this boot.")
 		_, err := bot.Send(msg)
 		if err != nil {
-			log.Println("send help command error.", err)
+			log.Println("send Help command error.", err)
 			return
 		}
-	case login:
-		msg := tgbotapi.NewMessage(message.Chat.ID, "Choose your login location.")
+	case Login:
+		msg := tgbotapi.NewMessage(message.Chat.ID, "Choose your Login location.")
 
 		// If the message was open, add a copy of our numeric keyboard.
 		switch message.Text {
 		case "open":
 			msg.ReplyMarkup = locationKeyboard
-
 		}
 
 		// Send the message.
