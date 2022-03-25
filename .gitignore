@@ -472,8 +472,5 @@ MigrationBackup/
 
 # End of https://www.toptal.com/developers/gitignore/api/go,intellij+all,vs
 
+boox-bot
 
-
-conf/*
-!conf/config-sample.cfg
-wecom-gsheet
