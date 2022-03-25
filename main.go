@@ -54,6 +54,9 @@ func main() {
 		for {
 			select {
 			case u := <-update:
+				if bot.Debug {
+					log.Println(u)
+				}
 				handleUpdate(u)
 			case <-ticker.C:
 				// do stuff
