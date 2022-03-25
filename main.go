@@ -9,13 +9,17 @@ import (
     "time"
 )
 
-
 func main() {
     webhook := os.Getenv("webhook")
     token := os.Getenv("token")
+    debug := os.Getenv("debug")
     bot, err := tgbotapi.NewBotAPI(token)
     if err != nil {
         log.Panic(err)
+    }
+
+    if debug == "true" {
+        bot.Debug = true
     }
 
     info, err := bot.GetWebhookInfo()
