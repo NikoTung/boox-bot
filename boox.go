@@ -92,21 +92,19 @@ func Send(email string) error {
 	return nil
 }
 
-func LoginBoox(email string, code string) error {
+func LoginBoox(email string, code string) (error, string) {
 
 	signUp := SignUp{Email: email, Code: code}
 
 	err, b := request(endpoint, signUp)
 	if err != nil {
-		return err
+		return err, ""
 	}
 	var t token
 	err = json.Unmarshal(b.Data, &t)
 	log.Printf("Login with token %s\n", t)
 
-	//TODO save token
-
-	return nil
+	return nil, t.Token
 }
 
 func request(endpoint string, param Requestable) (error, *BooxResponse) {
