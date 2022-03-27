@@ -8,6 +8,8 @@ import (
 	"strings"
 )
 
+//TODO store user
+
 type User struct {
 	Id      int64
 	Email   string
