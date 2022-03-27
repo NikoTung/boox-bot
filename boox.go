@@ -223,9 +223,13 @@ func (s SignUp) uri() string {
 func (b *Boox) Send(email string) error {
 	body := SendCode{Email: email}
 
-	err, _ := b.post(body)
+	err, bd := b.post(body)
 	if err != nil {
 		return err
+	}
+
+	if !bd.isSuccess() {
+		return errors.New(bd.Message)
 	}
 
 	return nil
