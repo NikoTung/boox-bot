@@ -38,9 +38,16 @@ func HandleCommand(message *tgbotapi.Message) {
 		_, _ = bot.Send(msg)
 
 	case Login:
+		email := u.Email
+		if len(email) == 0 {
+			msg := tgbotapi.NewMessage(message.Chat.ID, "I don't have your email yeah. \nUse /help command to get help.")
+			_, _ = bot.Send(msg)
+			return
+		}
+
 		code := message.CommandArguments()
 		if len(code) == 0 {
-			msg := tgbotapi.NewMessage(message.Chat.ID, "Now you can send/forward me your books.")
+			msg := tgbotapi.NewMessage(message.Chat.ID, "Please tell me your the code you got from login command.")
 			_, _ = bot.Send(msg)
 			return
 		}
@@ -90,7 +97,7 @@ func Upload(message *tgbotapi.Message) {
 	u := user.Get(message.From.ID)
 	boox := NewBoox(u)
 
-	if len(boox.token()) == 0 {
+	if !u.IsLogin() {
 		msg := tgbotapi.NewMessage(message.Chat.ID, "Please login first.")
 		_, _ = bot.Send(msg)
 		return

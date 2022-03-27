@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/hashicorp/golang-lru"
 	"strings"
+	"time"
 )
 
 //TODO store user
@@ -37,6 +38,11 @@ type sign struct {
 	LoginType string `json:"loginType"`
 	Iat       int    `json:"iat"`
 	Exp       int64  `json:"exp"`
+}
+
+func (u *User) IsLogin() bool {
+
+	return time.Now().Unix() > u.Expire
 }
 
 func (u *User) UpdateToken(uid, token string) error {
