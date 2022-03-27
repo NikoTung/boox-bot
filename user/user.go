@@ -1,40 +1,78 @@
 package user
 
-import "errors"
+import (
+	"encoding/base64"
+	"encoding/json"
+	"errors"
+	"github.com/hashicorp/golang-lru"
+	"strings"
+)
 
 type User struct {
-	Id    int64
-	Email string
-	Token string
+	Id      int64
+	Email   string
+	Token   string
+	BooxUid string
+	Expire  int64
 }
 
-var users = make(map[int64]*User)
+var userCache, _ = lru.New(100)
 
-func Get(id int64) *User {
-	u := &User{Id: id, Email: "niko.tung@protonmail.com", Token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTEwMDU4LCJsb2dpblR5cGUiOiJlbWFpbCIsImlhdCI6MTY0ODIyMDc0OSwiZXhwIjoxNjYzNzcyNzQ5fQ.jjZojH9_gjT-N2BFtzTqLeykPrygfpsziIM1dDc4_mc"}
-	users[id] = u
+func Get(id int64) (*User, error) {
+	e, ok := userCache.Get(id)
 
-	return u
+	if !ok {
+		return nil, errors.New("user not exist")
+	}
+
+	return e.(*User), nil
 }
 
-func UpdateToken(id int64, token string) error {
-	u := users[id]
-	if u == nil {
+type sign struct {
+	Id        int    `json:"id"`
+	LoginType string `json:"loginType"`
+	Iat       int    `json:"iat"`
+	Exp       int64  `json:"exp"`
+}
+
+func UpdateToken(id int64, uid, token string) error {
+	e, ok := userCache.Get(id)
+	if !ok {
 		return errors.New("user not exist")
 	}
-	users[id].Token = token
+
+	u := e.(*User)
+	li := strings.LastIndex(token, ".")
+	fi := strings.Index(token, ".")
+
+	if li != -1 && fi != -1 && li != fi {
+		m := token[fi+1 : li-1]
+		d, err := base64.StdEncoding.DecodeString(m)
+		if err != nil {
+			return err
+
+		}
+
+		var s sign
+		err = json.Unmarshal(d, &s)
+		if err != nil {
+			return err
+		}
+		u.Expire = s.Exp
+	}
+
+	u.Token = token
+	u.BooxUid = uid
 
 	return nil
 }
 
 func Add(id int64, email string) {
-	u := users[id]
-	if u != nil {
-		return
-	}
 
-	users[id] = &User{
+	u := &User{
 		Id:    id,
 		Email: email,
 	}
+
+	userCache.Add(id, u)
 }
