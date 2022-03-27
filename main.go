@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"time"
 )
 
 func main() {
@@ -26,6 +25,12 @@ func main() {
 	if err != nil && len(webhook) == 0 {
 		log.Panic("webhook not exist.")
 	}
+
+	//delete := &tgbotapi.DeleteWebhookConfig{
+	//	DropPendingUpdates: true,
+	//}
+	//
+	//bot.Request(delete)
 
 	if webhook != info.URL {
 		webhookConfig, err := tgbotapi.NewWebhook(webhook)
@@ -48,24 +53,22 @@ func main() {
 	link, err := url.Parse(webhook)
 	update := bot.ListenForWebhook(link.Path)
 
-	ticker := time.NewTicker(5 * time.Second)
-	quit := make(chan struct{})
 	go func() {
 		for {
 			select {
 			case u := <-update:
-				if bot.Debug {
-					log.Println(u)
-				}
 				handleUpdate(u)
-			case <-ticker.C:
-				// do stuff
-			case <-quit:
-				ticker.Stop()
-				return
 			}
 		}
 	}()
+
+	//u := tgbotapi.NewUpdate(0)
+	//u.Timeout = 60
+	//updates := bot.GetUpdatesChan(u)
+	//
+	//for update := range updates {
+	//	handleUpdate(update)
+	//}
 
 	s := &http.Server{
 		Addr: ":9180",
@@ -81,5 +84,13 @@ func handleUpdate(update tgbotapi.Update) {
 
 	if update.Message.IsCommand() {
 		HandleCommand(update.Message)
+	}
+
+	if update.Message.Document != nil {
+		Upload(update.Message)
+	}
+
+	if update.CallbackQuery != nil {
+
 	}
 }
