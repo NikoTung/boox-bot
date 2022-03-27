@@ -2,18 +2,24 @@ package main
 
 import (
 	"bytes"
+	"crypto/md5"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/aliyun/aliyun-oss-go-sdk/oss"
+	gonanoid "github.com/matoous/go-nanoid/v2"
 	"github.com/niko/boox-bot/user"
 	"io"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 )
 
 const (
-	endpoint = "https://send2boox.com/api/1/%s"
-	bucket   = "onyx-cloud"
+	endpoint        = "https://send2boox.com/api/1/%s"
+	bucket          = "onyx-cloud"
+	aliyun_endpoint = "https://oss-cn-shenzhen.aliyuncs.com/"
 )
 
 type Response interface {
@@ -36,6 +42,10 @@ func (b *Boox) token() string {
 	}
 
 	return ""
+}
+
+func (b *Boox) uid() string {
+	return b.User.BooxUid
 }
 
 //BooxResponse contain the raw response from boox
@@ -84,6 +94,58 @@ func (sc SendCode) uri() string {
 	return "users/sendMobileCode"
 }
 
+type saveResp struct {
+	Category          []interface{} `json:"category"`
+	Tags              []interface{} `json:"tags"`
+	Formats           []string      `json:"formats"`
+	ViewCount         int           `json:"viewCount"`
+	DownloadCount     int           `json:"downloadCount"`
+	CommentsCount     int           `json:"commentsCount"`
+	Size              int           `json:"size"`
+	SourceType        int           `json:"sourceType"`
+	ChildCount        int           `json:"childCount"`
+	PushNum           int           `json:"pushNum"`
+	IsFolder          string        `json:"isFolder"`
+	Parent            interface{}   `json:"parent"`
+	Id                string        `json:"_id"`
+	UserId            string        `json:"userId"`
+	Name              string        `json:"name"`
+	OwnerId           string        `json:"ownerId"`
+	Title             string        `json:"title"`
+	DistributeChannel string        `json:"distributeChannel"`
+	Guid              string        `json:"guid"`
+	Mac               string        `json:"mac"`
+	DeviceModel       string        `json:"deviceModel"`
+	CreatedAt         time.Time     `json:"createdAt"`
+	UpdatedAt         time.Time     `json:"updatedAt"`
+}
+
+type save struct {
+	Data saveData `json:"data"`
+}
+
+type saveData struct {
+	Bucket              string      `json:"bucket"`
+	Name                string      `json:"name"`
+	Parent              interface{} `json:"parent"`
+	ResourceDisplayName string      `json:"resourceDisplayName"`
+	ResourceKey         string      `json:"resourceKey"`
+	ResourceType        string      `json:"resourceType"`
+	Title               string      `json:"title"`
+}
+
+func (s save) uri() string {
+	return "push/saveAndPush"
+}
+
+func (s save) body() (io.Reader, error) {
+	b, err := json.Marshal(s)
+	if err != nil {
+		return nil, err
+	}
+	return bytes.NewReader(b), nil
+}
+
 //AliyunConfig get aliyun oss upload configuration
 type AliyunConfig struct {
 }
@@ -104,6 +166,41 @@ type aliyunSts struct {
 	SecurityToken   string    `json:"SecurityToken"`
 }
 
+type meResp struct {
+	AreaCode      string      `json:"area_code"`
+	Avatar        interface{} `json:"avatar"`
+	AvatarUrl     interface{} `json:"avatarUrl"`
+	DeviceLimit   int         `json:"device_limit"`
+	Email         string      `json:"email"`
+	GiftCount     int         `json:"giftCount"`
+	GoogleId      interface{} `json:"google_id"`
+	Id            int         `json:"id"`
+	LoginType     string      `json:"login_type"`
+	Nickname      interface{} `json:"nickname"`
+	OauthId       interface{} `json:"oauth_id"`
+	Phone         interface{} `json:"phone"`
+	RoleValue     int         `json:"roleValue"`
+	Sex           interface{} `json:"sex"`
+	StorageLimit  int64       `json:"storage_limit"`
+	StorageUsed   int         `json:"storage_used"`
+	Uid           string      `json:"uid"`
+	VipCloud      int         `json:"vip_cloud"`
+	VipCloudEnd   interface{} `json:"vip_cloud_end"`
+	VipCloudStart interface{} `json:"vip_cloud_start"`
+	WechatId      interface{} `json:"wechat_id"`
+}
+
+type me struct {
+}
+
+func (m me) uri() string {
+	return "users/me"
+}
+
+func (m me) body() (io.Reader, error) {
+	return nil, nil
+}
+
 //SignUp contain the information for user to login boox
 type SignUp struct {
 	Email string `json:"mobi"`
@@ -122,7 +219,7 @@ func (s SignUp) uri() string {
 	return "users/signupByPhoneOrEmail"
 }
 
-//Send send code to email
+//Send code to email
 func (b *Boox) Send(email string) error {
 	body := SendCode{Email: email}
 
@@ -135,19 +232,29 @@ func (b *Boox) Send(email string) error {
 }
 
 //LoginBoox login to boox with email and code
-func (b *Boox) LoginBoox(email string, code string) (error, string) {
+//
+// error
+// string token
+// string boox uid
+func (b *Boox) LoginBoox(email string, code string) (error, string, string) {
 
 	signUp := SignUp{Email: email, Code: code}
 
 	err, r := b.post(signUp)
 	if err != nil {
-		return err, ""
+		return err, "", ""
 	}
+
+	err, mi := b.meInfo(me{})
+	if err != nil {
+		return err, "", ""
+	}
+
 	var t token
 	err = json.Unmarshal(r.Data, &t)
-	log.Printf("Login with token %s\n", t)
+	log.Printf("Login uid %s with token %s\n", mi.Uid, t)
 
-	return err, t.Token
+	return err, t.Token, mi.Uid
 }
 
 func (b *Boox) aliyunSts() (error, aliyunSts) {
@@ -212,6 +319,87 @@ func (b *Boox) get(param Requestable) (error, *BooxResponse) {
 		return err, nil
 	}
 	return nil, &br
+}
+
+func (b *Boox) saveAndPush(s save) error {
+	err, sr := b.post(s)
+	if err != nil {
+		return err
+	}
+
+	if !sr.isSuccess() {
+		return errors.New(sr.Message)
+	}
+	return nil
+}
+
+func (b *Boox) Upload(url string, name string) error {
+	err, a := b.aliyunSts()
+	if err != nil {
+		return err
+	}
+
+	client, err := oss.New(aliyun_endpoint, a.AccessKeyId, a.AccessKeySecret, oss.SecurityToken(a.SecurityToken))
+	if err != nil {
+		log.Println("Aliyun oss client create error, ", err)
+		return err
+	}
+
+	h, err := http.Get(url)
+	if err != nil {
+		log.Println("Get document error, ", err)
+		return err
+	}
+
+	bk, err := client.Bucket(bucket)
+	if err != nil {
+		return err
+	}
+
+	key, t := resourceKey(b.uid(), name)
+	err = bk.PutObject(key, h.Body)
+	if err != nil {
+		log.Printf("Put object ,resource key %s error %s", key, err)
+		return err
+	}
+
+	s := save{saveData{Name: name, Bucket: bucket, ResourceDisplayName: name, ResourceType: t, Title: name, ResourceKey: key}}
+	err = b.saveAndPush(s)
+	if err != nil {
+		log.Printf("Save and push to boox error,%s,%s", s, err)
+		return err
+	}
+
+	return nil
+}
+
+func (b *Boox) meInfo(m Requestable) (error, meResp) {
+	err, mi := b.get(m)
+	if err != nil {
+		return err, meResp{}
+	}
+
+	if !mi.isSuccess() {
+		return errors.New(mi.Message), meResp{}
+	}
+
+	var mr meResp
+	err = json.Unmarshal(mi.Data, &mr)
+
+	return err, mr
+}
+
+func resourceKey(uid, name string) (string, string) {
+	f, _ := gonanoid.Generate("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ", 54)
+	s := fmt.Sprintf("%x", md5.Sum([]byte(f)))
+	t := ""
+	if len(name) > 0 {
+		if i := strings.LastIndex(name, "."); i != -1 {
+			t = name[i+1:]
+		}
+	}
+
+	return strings.Join([]string{uid, "push", s}, "/") + "." + t, t
 }
 
 func request(r *http.Request, t string) (*http.Response, error) {
