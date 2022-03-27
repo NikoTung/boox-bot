@@ -321,56 +321,55 @@ func (b *Boox) get(param Requestable) (error, *BooxResponse) {
 	return nil, &br
 }
 
-func (b *Boox) saveAndPush(s save) error {
+func (b *Boox) saveAndPush(s save) (error, string) {
 	err, sr := b.post(s)
 	if err != nil {
-		return err
+		return err, ""
 	}
 
 	if !sr.isSuccess() {
-		return errors.New(sr.Message)
+		return errors.New(sr.Message), ""
 	}
-	return nil
+	return nil, sr.Message
 }
 
-func (b *Boox) Upload(url string, name string) error {
+func (b *Boox) Upload(url string, name string) (error, string) {
 	err, a := b.aliyunSts()
 	if err != nil {
-		return err
+		return err, ""
 	}
 
 	client, err := oss.New(aliyun_endpoint, a.AccessKeyId, a.AccessKeySecret, oss.SecurityToken(a.SecurityToken))
 	if err != nil {
 		log.Println("Aliyun oss client create error, ", err)
-		return err
+		return err, ""
 	}
 
 	h, err := http.Get(url)
 	if err != nil {
 		log.Println("Get document error, ", err)
-		return err
+		return err, ""
 	}
 
 	bk, err := client.Bucket(bucket)
 	if err != nil {
-		return err
+		return err, ""
 	}
 
 	key, t := resourceKey(b.uid(), name)
 	err = bk.PutObject(key, h.Body)
 	if err != nil {
 		log.Printf("Put object ,resource key %s error %s", key, err)
-		return err
+		return err, ""
 	}
 
 	s := save{saveData{Name: name, Bucket: bucket, ResourceDisplayName: name, ResourceType: t, Title: name, ResourceKey: key}}
-	err = b.saveAndPush(s)
+	err, m := b.saveAndPush(s)
 	if err != nil {
 		log.Printf("Save and push to boox error,%s,%s", s, err)
-		return err
 	}
 
-	return nil
+	return err, m
 }
 
 func (b *Boox) meInfo(m Requestable) (error, meResp) {
