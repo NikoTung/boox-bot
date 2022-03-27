@@ -3,7 +3,6 @@ package user
 import (
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"github.com/hashicorp/golang-lru"
 	"strings"
 )
@@ -20,14 +19,17 @@ type User struct {
 
 var userCache, _ = lru.New(100)
 
-func Get(id int64) (*User, error) {
+//Get or create a user
+func Get(id int64) *User {
 	e, ok := userCache.Get(id)
 
 	if !ok {
-		return nil, errors.New("user not exist")
+		e = &User{
+			Id: id,
+		}
 	}
 
-	return e.(*User), nil
+	return e.(*User)
 }
 
 type sign struct {
@@ -37,13 +39,8 @@ type sign struct {
 	Exp       int64  `json:"exp"`
 }
 
-func UpdateToken(id int64, uid, token string) error {
-	e, ok := userCache.Get(id)
-	if !ok {
-		return errors.New("user not exist")
-	}
+func (u *User) UpdateToken(uid, token string) error {
 
-	u := e.(*User)
 	li := strings.LastIndex(token, ".")
 	fi := strings.Index(token, ".")
 
@@ -69,12 +66,7 @@ func UpdateToken(id int64, uid, token string) error {
 	return nil
 }
 
-func Add(id int64, email string) {
+func (u *User) UpdateEmail(email string) {
 
-	u := &User{
-		Id:    id,
-		Email: email,
-	}
-
-	userCache.Add(id, u)
+	u.Email = email
 }
