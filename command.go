@@ -29,7 +29,7 @@ func init() {
 }
 
 func HandleCommand(message *tgbotapi.Message) {
-	u := user.Get(message.From.ID)
+	u, _ := user.Get(message.From.ID)
 	boox := NewBoox(u)
 	switch message.Command() {
 	case Help:
@@ -43,7 +43,7 @@ func HandleCommand(message *tgbotapi.Message) {
 		}
 	case Login:
 		code := message.CommandArguments()
-		u := user.Get(message.From.ID)
+		u, _ := user.Get(message.From.ID)
 		err, t, uid := boox.LoginBoox(u.Email, code)
 		msg := tgbotapi.NewMessage(message.Chat.ID, "Now you can send/forward me your books.")
 
@@ -78,10 +78,10 @@ func HandleCommand(message *tgbotapi.Message) {
 //Upload file
 //TODO limit the document type,such as only epub,pdf,mobi ...
 func Upload(message *tgbotapi.Message) {
-	u := user.Get(message.From.ID)
+	u, err := user.Get(message.From.ID)
 	boox := NewBoox(u)
 
-	if len(boox.token()) == 0 {
+	if err != nil || len(boox.token()) == 0 {
 		msg := tgbotapi.NewMessage(message.Chat.ID, "Please login first.")
 		_, _ = bot.Send(msg)
 		return
