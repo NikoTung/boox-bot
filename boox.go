@@ -146,6 +146,18 @@ func (s save) body() (io.Reader, error) {
 	return bytes.NewReader(b), nil
 }
 
+type push struct {
+	Ids []string `json:"ids"`
+}
+
+func (p push) body() (io.Reader, error) {
+	return nil, nil
+}
+
+func (p push) uri() string {
+	return "push/rePush/bat"
+}
+
 //AliyunConfig get aliyun oss upload configuration
 type AliyunConfig struct {
 }
@@ -325,55 +337,78 @@ func (b *Boox) get(param Requestable) (error, *BooxResponse) {
 	return nil, &br
 }
 
-func (b *Boox) saveAndPush(s save) (error, string) {
+func (b *Boox) saveAndPush(s save) (error, *saveResp) {
 	err, sr := b.post(s)
 	if err != nil {
-		return err, ""
+		return err, nil
 	}
 
 	if !sr.isSuccess() {
-		return errors.New(sr.Message), ""
+		return errors.New(sr.Message), nil
 	}
-	return nil, sr.Message
+
+	var svr saveResp
+	err = json.Unmarshal(sr.Data, &svr)
+
+	return nil, &svr
 }
 
-func (b *Boox) Upload(url string, name string) (error, string) {
+func (b *Boox) rePush(p push) error {
+	err, rp := b.post(p)
+	if err != nil {
+		return err
+	}
+
+	if !rp.isSuccess() {
+		return errors.New(rp.Message)
+	}
+
+	return nil
+}
+
+func (b *Boox) Upload(url, name string) error {
 	err, a := b.aliyunSts()
 	if err != nil {
-		return err, ""
+		return err
 	}
 
 	client, err := oss.New(aliyun_endpoint, a.AccessKeyId, a.AccessKeySecret, oss.SecurityToken(a.SecurityToken))
 	if err != nil {
 		log.Println("Aliyun oss client create error, ", err)
-		return err, ""
+		return err
 	}
 
 	h, err := http.Get(url)
 	if err != nil {
 		log.Println("Get document error, ", err)
-		return err, ""
+		return err
 	}
 
 	bk, err := client.Bucket(bucket)
 	if err != nil {
-		return err, ""
+		return err
 	}
 
 	key, t := resourceKey(b.uid(), name)
 	err = bk.PutObject(key, h.Body)
 	if err != nil {
 		log.Printf("Put object ,resource key %s error %s", key, err)
-		return err, ""
+		return err
 	}
 
 	s := save{saveData{Name: name, Bucket: bucket, ResourceDisplayName: name, ResourceType: t, Title: name, ResourceKey: key}}
 	err, m := b.saveAndPush(s)
 	if err != nil {
 		log.Printf("Save and push to boox error,%s,%s", s, err)
+		return err
 	}
 
-	return err, m
+	err = b.rePush(push{Ids: []string{m.Guid}})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (b *Boox) meInfo(m Requestable) (error, meResp) {

@@ -115,8 +115,8 @@ func Upload(message *tgbotapi.Message) {
 
 	fileUrl := file.Link(bot.Token)
 
-	err, m := boox.Upload(fileUrl, message.Document.FileName)
-	msg := tgbotapi.NewMessage(message.Chat.ID, fmt.Sprintf("Upload with %s", m))
+	err = boox.Upload(fileUrl, message.Document.FileName)
+	msg := tgbotapi.NewMessage(message.Chat.ID, fmt.Sprintf("Upload with %s", err))
 
 	if err != nil {
 		msg = tgbotapi.NewMessage(message.Chat.ID, fmt.Sprintf("Upload failed %s", err))
