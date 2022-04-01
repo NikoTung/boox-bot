@@ -11,6 +11,7 @@ const (
 	Help  = "help"
 	Login = "login"
 	Code  = "code"
+	Me    = "me"
 )
 
 var locationKeyboard = tgbotapi.NewInlineKeyboardMarkup(
@@ -86,6 +87,12 @@ func HandleCommand(message *tgbotapi.Message) {
 		u.UpdateEmail(message.CommandArguments())
 
 		_, _ = bot.Send(msg)
+	case Me:
+		msg := fmt.Sprintf("Not login yeah.")
+		if boox.User.IsLogin() {
+			msg = fmt.Sprintf("Email %s \n Boox uid %s \n Expire at %d", u.Email, u.BooxUid, u.Expire)
+		}
+		_, _ = bot.Send(tgbotapi.NewMessage(message.Chat.ID, msg))
 	default:
 
 	}
