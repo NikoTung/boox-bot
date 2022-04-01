@@ -84,7 +84,7 @@ func HandleCommand(message *tgbotapi.Message) {
 		}
 		msg := tgbotapi.NewMessage(message.Chat.ID, txt)
 
-		u.UpdateEmail(message.CommandArguments())
+		u.UpdateEmail(email)
 
 		_, _ = bot.Send(msg)
 	case Me:

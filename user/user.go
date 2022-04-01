@@ -28,6 +28,7 @@ func Get(id int64) *User {
 		e = &User{
 			Id: id,
 		}
+		userCache.Add(id, e)
 	}
 
 	return e.(*User)
