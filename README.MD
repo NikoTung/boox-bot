@@ -16,13 +16,13 @@ This is the starting point of this bot.
 
 ### Login
 
-The /code command uses the `users/sendMobileCode` endpoint to you an email with a login code which the bot will use to login to boot,obtain a token by the endpoint `users/signupByPhoneOrEmail`.
+The /code command uses the `users/sendMobileCode` endpoint to email you a login code which the bot will use to log in to boot,obtaining a token by the endpoint `users/signupByPhoneOrEmail`.
 
-The token will expire in six months,as far I know.
+The token will be expired in six months,as far I know.
 
 ### Upload
 
-Once the bot receive a document,it will first get a temporary aliyun [sts](https://help.aliyun.com/document_detail/410749.html) by the endpoint `config/stss`, 
+Once the bot received a document,it will first get a temporary aliyun [sts](https://help.aliyun.com/document_detail/410749.html) by the endpoint `config/stss`, 
 then use it to upload to Aliyun OSS under the path of your uid.Everything you upload is only accessibly by you.
 
 
