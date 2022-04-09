@@ -151,7 +151,11 @@ type push struct {
 }
 
 func (p push) body() (io.Reader, error) {
-	return nil, nil
+	b, err := json.Marshal(p)
+	if err != nil {
+		return nil, err
+	}
+	return bytes.NewReader(b), nil
 }
 
 func (p push) uri() string {
