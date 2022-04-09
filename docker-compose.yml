@@ -1,0 +1,21 @@
+version: "3.9"
+services:
+  mysql:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: "root-db0xbot"
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+    restart: unless-stopped
+
+  bot:
+    image: ghcr.io/nikotung/boox-bot:latest
+    environment:
+      - token="YOUR_TOKEN"
+      - webhook="YOUR_WEBHOOK"
+      - db="root:root-db0xbot@tcp(mysql:3306)/bot"
+    ports:
+      - "9180:9180"
+    restart: unless-stopped
+    depends_on:
+      - mysql

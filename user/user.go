@@ -1,14 +1,29 @@
 package user
 
 import (
+	"database/sql"
 	"encoding/base64"
 	"encoding/json"
-	"github.com/hashicorp/golang-lru"
+	_ "github.com/go-sql-driver/mysql"
+	"log"
+	"os"
 	"strings"
 	"time"
 )
 
 //TODO store user
+
+var db *sql.DB
+
+func init() {
+	db, err := sql.Open("mysql", os.Getenv("db"))
+	if err != nil {
+		panic(err)
+	}
+	db.SetConnMaxLifetime(time.Minute * 5)
+	db.SetMaxOpenConns(10)
+	db.SetMaxIdleConns(10)
+}
 
 type User struct {
 	Id      int64
@@ -18,20 +33,46 @@ type User struct {
 	Expire  int64
 }
 
-var userCache, _ = lru.New(100)
-
 //Get or create a user
 func Get(id int64) *User {
-	e, ok := userCache.Get(id)
 
-	if !ok {
-		e = &User{
-			Id: id,
-		}
-		userCache.Add(id, e)
+	e := &User{
+		Id: id,
 	}
 
-	return e.(*User)
+	rows, err := db.Query("SELECT id ,email,token,boox_uid as booxUid,expire_at as expire FROM user WHERE id = ?", id)
+
+	if err != nil {
+		return e
+	}
+
+	if rows.Next() {
+		var id int64
+		var email string
+		var token string
+		var booxUid string
+		var expire int64
+		if err := rows.Scan(&id, &email, &token, &booxUid, &expire); err != nil {
+			return e
+		}
+		e = &User{
+			Id:      id,
+			Email:   email,
+			Token:   token,
+			BooxUid: booxUid,
+			Expire:  expire,
+		}
+	} else {
+		_ = add(id)
+	}
+
+	return e
+
+}
+
+func add(id int64) error {
+	_, err := db.Exec("INSERT INTO user (id) VALUES (?)", id)
+	return err
 }
 
 type sign struct {
@@ -67,6 +108,11 @@ func (u *User) UpdateToken(uid, token string) error {
 		u.Expire = s.Exp
 	}
 
+	_, err := db.Exec("UPdate user set token=?,boox_uid=? where id=? ", token, uid, u.Id)
+	if err != nil {
+		log.Println("update token error", err)
+	}
+
 	u.Token = token
 	u.BooxUid = uid
 
@@ -74,6 +120,11 @@ func (u *User) UpdateToken(uid, token string) error {
 }
 
 func (u *User) UpdateEmail(email string) {
+
+	_, err := db.Exec("UPdate user set email=? where id=? ", email, u.Id)
+	if err != nil {
+		log.Println("update email error", err)
+	}
 
 	u.Email = email
 }

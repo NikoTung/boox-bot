@@ -1,0 +1,10 @@
+CREATE DATABASE `bot_db` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+
+CREATE TABLE `bot_db`.`user` (
+    id INT UNSIGNED NOT NULL,
+    email VARCHAR(32) NOT NULL DEFAULT '',
+    token VARCHAR(256) NOT NULL DEFAULT '',
+    boox_uid VARCHAR(32) NOT NULL DEFAULT '',
+    expire_at INT UNSIGNED NOT NULL DEFAULT 0,
+    PRIMARY KEY (id)
+)
