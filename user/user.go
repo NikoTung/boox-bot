@@ -95,7 +95,7 @@ type sign struct {
 
 func (u *User) IsLogin() bool {
 
-	return u.Expire > 0 && time.Now().Unix() > u.Expire
+	return u.Expire > 0 && u.Expire > time.Now().Unix()
 }
 
 func (u *User) UpdateToken(uid, token string) error {
