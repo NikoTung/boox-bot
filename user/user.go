@@ -1,6 +1,7 @@
 package user
 
 import (
+	"context"
 	"database/sql"
 	"encoding/base64"
 	"encoding/json"
@@ -11,18 +12,28 @@ import (
 	"time"
 )
 
-//TODO store user
-
 var db *sql.DB
 
 func init() {
-	db, err := sql.Open("mysql", os.Getenv("db"))
+	var err error
+	db, err = sql.Open("mysql", os.Getenv("db"))
 	if err != nil {
 		panic(err)
 	}
+
 	db.SetConnMaxLifetime(time.Minute * 5)
 	db.SetMaxOpenConns(10)
 	db.SetMaxIdleConns(10)
+	ctx, stop := context.WithCancel(context.Background())
+	defer stop()
+
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+
+	if err := db.PingContext(ctx); err != nil {
+		log.Fatalf("unable to connect to database: %v", err)
+	}
+
 }
 
 type User struct {

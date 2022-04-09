@@ -13,7 +13,7 @@ services:
     environment:
       - token="YOUR_TOKEN"
       - webhook="YOUR_WEBHOOK"
-      - db="root:root-db0xbot@tcp(mysql:3306)/bot"
+      - db="root:root-db0xbot@tcp(mysql:3306)/bot_db"
     ports:
       - "9180:9180"
     restart: unless-stopped
