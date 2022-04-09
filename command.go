@@ -4,6 +4,7 @@ import (
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/niko/boox-bot/user"
+	"log"
 	"os"
 )
 
@@ -55,6 +56,7 @@ func HandleCommand(message *tgbotapi.Message) {
 		u := user.Get(message.From.ID)
 		err, t, uid := boox.LoginBoox(u.Email, code)
 		if err != nil {
+			log.Printf("Log in to boox failed,%s,%s\n", u.Email, code)
 			msg := tgbotapi.NewMessage(message.Chat.ID, fmt.Sprintf("Login into boox failed,%s", err))
 			_, _ = bot.Send(msg)
 			return

@@ -308,6 +308,10 @@ func (bx *Boox) post(param Requestable) (error, *BooxResponse) {
 	if err != nil {
 		return err, nil
 	}
+
+	if !br.isSuccess() {
+		log.Printf("[POST] Request to %s with data %s, failed with result %s.", param.uri(), param, br.Message)
+	}
 	return nil, &br
 }
 
@@ -333,6 +337,9 @@ func (b *Boox) get(param Requestable) (error, *BooxResponse) {
 
 	if err != nil {
 		return err, nil
+	}
+	if !br.isSuccess() {
+		log.Printf("[GET] Request to %s wit data %s, failed with result %s.", param.uri(), param, br.Message)
 	}
 	return nil, &br
 }
