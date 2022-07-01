@@ -30,3 +30,13 @@ then use it to upload to Aliyun OSS under the path of your uid.Everything you up
 
 In theory,it has obtained your access token which means it can do everything just like you are in send2boox.com.
 But this bot only keep your token to upload documents and push it to your device,nothing more.
+
+## Build
+Build by docker
+
+    docker build -t boox-bot:latest .
+
+Run with docker-compose,you need to specify your `token` and `webhook` in the enviroment variables.
+
+    docker-compose up -d
+
