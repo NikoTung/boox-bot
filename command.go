@@ -101,7 +101,7 @@ func HandleCommand(message *tgbotapi.Message) {
 }
 
 //Upload file
-//TODO limit the document type,such as only epub,pdf,mobi ...
+//TODO limit the document types,such as only epub,pdf,mobi ...
 func Upload(message *tgbotapi.Message) {
 	u := user.Get(message.From.ID)
 	boox := NewBoox(u)
@@ -125,7 +125,7 @@ func Upload(message *tgbotapi.Message) {
 	fileUrl := file.Link(bot.Token)
 
 	err = boox.Upload(fileUrl, message.Document.FileName)
-	msg := tgbotapi.NewMessage(message.Chat.ID, fmt.Sprintf("Upload with %s", err))
+	msg := tgbotapi.NewMessage(message.Chat.ID, fmt.Sprintf("File %s uploaded.", message.Document.FileName))
 
 	if err != nil {
 		msg = tgbotapi.NewMessage(message.Chat.ID, fmt.Sprintf("Upload failed %s", err))
