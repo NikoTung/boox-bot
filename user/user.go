@@ -125,7 +125,8 @@ func parseToken(token string)(exp int64, err error)  {
 
 	if li != -1 && fi != -1 && li != fi {
 		m := token[fi+1 : li]
-		d, err := base64.StdEncoding.DecodeString(m)
+		log.Println(m)
+		d, err := base64.RawStdEncoding.DecodeString(m)
 		if err != nil {
 			return 0, err
 		}
