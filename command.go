@@ -26,7 +26,10 @@ var bot *tgbotapi.BotAPI
 
 func init() {
 	bot, _ = tgbotapi.NewBotAPI(os.Getenv("token"))
-
+	debug := os.Getenv("debug")
+	if debug == "true" {
+		bot.Debug = true
+	}
 }
 
 func HandleCommand(message *tgbotapi.Message) {
