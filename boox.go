@@ -480,5 +480,14 @@ func request(r *http.Request, t string) (*http.Response, error) {
 		r.Header.Set("Authorization", "Bearer "+t)
 	}
 
-	return http.DefaultClient.Do(r)
+	resp, err := http.DefaultClient.Do(r)
+
+	if bot.Debug {
+		rqb, _ := io.ReadAll(r.Body)
+		rsb, _ := io.ReadAll(resp.Body)
+
+		log.Printf("Endpoint: %s, request: %s,response:%s", r.URL, string(rqb), string(rsb))
+	}
+
+	return resp, err
 }

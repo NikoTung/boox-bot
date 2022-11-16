@@ -82,6 +82,10 @@ func main() {
 
 func handleUpdate(update tgbotapi.Update) {
 
+	if update.Message == nil {
+		return
+	}
+
 	if update.Message.IsCommand() {
 		HandleCommand(update.Message)
 	}
