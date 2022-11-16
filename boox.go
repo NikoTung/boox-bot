@@ -45,7 +45,10 @@ func (b *Boox) token() string {
 }
 
 func (b *Boox) uid() string {
-	return b.User.BooxUid
+	if len(b.User.BooxUid) > 0 {
+		return b.User.BooxUid
+	}
+	return ""
 }
 
 // BooxResponse contain the raw response from boox
@@ -266,13 +269,19 @@ func (b *Boox) LoginBoox(email string, code string) (error, string, string) {
 		return err, "", ""
 	}
 
+	var t token
+	err = json.Unmarshal(r.Data, &t)
+
+	//expired user
+	if err == nil && (len(b.uid()) > 0) {
+		err = b.User.UpdateToken(b.uid(), t.Token)
+	}
+
 	err, mi := b.meInfo(me{})
 	if err != nil {
 		return err, "", ""
 	}
 
-	var t token
-	err = json.Unmarshal(r.Data, &t)
 	log.Printf("Login uid %s with token %s\n", mi.Uid, t)
 
 	return err, t.Token, mi.Uid

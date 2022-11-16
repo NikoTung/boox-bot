@@ -122,6 +122,7 @@ func (u *User) UpdateToken(uid, token string) error {
 	_, err := db.Exec("UPdate user set token=?,boox_uid=? where id=? ", token, uid, u.Id)
 	if err != nil {
 		log.Println("update token error", err)
+		return err
 	}
 
 	u.Token = token

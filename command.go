@@ -53,7 +53,7 @@ func HandleCommand(message *tgbotapi.Message) {
 			_, _ = bot.Send(msg)
 			return
 		}
-		u := user.Get(message.From.ID)
+		//		u := user.Get(message.From.ID)
 		err, t, uid := boox.LoginBoox(u.Email, code)
 		if err != nil {
 			log.Printf("Log in to boox failed,%s,%s\n", u.Email, code)
