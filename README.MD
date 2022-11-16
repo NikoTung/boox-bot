@@ -1,4 +1,7 @@
 # Boox bot
+
+[![Create and publish a Docker image](https://github.com/NikoTung/boox-bot/actions/workflows/docker-image.yml/badge.svg)](https://github.com/NikoTung/boox-bot/actions/workflows/docker-image.yml)
+
 A telegram bot for sending books to your Boox device.You may try it on [Telegram](https://t.me/Boox_sync_bot)
 
 Currently,it only supports to login [China](https://send2boox.com/) server.
