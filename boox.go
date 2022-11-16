@@ -313,15 +313,14 @@ func (bx *Boox) post(param Requestable) (error, *BooxResponse) {
 
 	r, err := http.NewRequest("POST", fullEndpoint, b)
 
-	resp, err := request(r, bx.token())
+	body, err := request(r, bx.token())
 
 	if err != nil {
 		return err, nil
 	}
-	defer resp.Body.Close()
 
 	var br BooxResponse
-	decoder := json.NewDecoder(resp.Body)
+	decoder := json.NewDecoder(bytes.NewReader(body))
 
 	err = decoder.Decode(&br)
 
@@ -343,15 +342,14 @@ func (b *Boox) get(param Requestable) (error, *BooxResponse) {
 		return err, nil
 	}
 
-	resp, err := request(r, b.token())
+	body, err := request(r, b.token())
 
 	if err != nil {
 		return err, nil
 	}
-	defer resp.Body.Close()
 
 	var br BooxResponse
-	decoder := json.NewDecoder(resp.Body)
+	decoder := json.NewDecoder(bytes.NewReader(body))
 
 	err = decoder.Decode(&br)
 
@@ -467,7 +465,7 @@ func resourceKey(uid, name string) (string, string) {
 	return strings.Join([]string{uid, "push", s}, "/") + "." + t, t
 }
 
-func request(r *http.Request, t string) (*http.Response, error) {
+func request(r *http.Request, t string) ([]byte, error) {
 
 	r.Header.Set("Accept", "application/json")
 	r.Header.Set("Content-Type", "application/json;charset=UTF-8")
@@ -482,12 +480,15 @@ func request(r *http.Request, t string) (*http.Response, error) {
 
 	resp, err := http.DefaultClient.Do(r)
 
+	if err != nil {
+		return nil, err
+	}
+
+	rsb, err := io.ReadAll(resp.Body)
 	if bot.Debug {
 		rqb, _ := io.ReadAll(r.Body)
-		rsb, _ := io.ReadAll(resp.Body)
-
 		log.Printf("Endpoint: %s, request: %s,response:%s", r.URL, string(rqb), string(rsb))
 	}
 
-	return resp, err
+	return rsb, err
 }
