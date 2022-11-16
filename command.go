@@ -100,8 +100,8 @@ func HandleCommand(message *tgbotapi.Message) {
 	}
 }
 
-//Upload file
-//TODO limit the document types,such as only epub,pdf,mobi ...
+// Upload file
+// TODO limit the document types,such as only epub,pdf,mobi ...
 func Upload(message *tgbotapi.Message) {
 	u := user.Get(message.From.ID)
 	boox := NewBoox(u)

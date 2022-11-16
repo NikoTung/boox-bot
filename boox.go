@@ -37,7 +37,7 @@ func NewBoox(u *user.User) *Boox {
 }
 
 func (b *Boox) token() string {
-	if len(b.User.Token) > 0 {
+	if len(b.User.Token) > 0 && b.User.IsLogin() {
 		return b.User.Token
 	}
 
@@ -48,15 +48,16 @@ func (b *Boox) uid() string {
 	return b.User.BooxUid
 }
 
-//BooxResponse contain the raw response from boox
-//  {
-//      "data":
-//      {
-//          "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTEwMDU4LCJsb2dpblR5cGUiOiJlbWFpbCIsImlhdCI6MTY0ODIyMDc0OSwiZXhwIjoxNjYzNzcyNzQ5fQ.jjZojH9_gjT-N2BFtzTqLeykPrygfpsziIM1dDc4_mc"
-//      },
-//      "message": "SUCCESS",
-//      "result_code": 0
-//  }
+// BooxResponse contain the raw response from boox
+//
+//	{
+//	    "data":
+//	    {
+//	        "token": ""
+//	    },
+//	    "message": "SUCCESS",
+//	    "result_code": 0
+//	}
 type BooxResponse struct {
 	Data       json.RawMessage `json:"data"`
 	Message    string          `json:"message"`
@@ -71,13 +72,13 @@ type token struct {
 	Token string `json:"token"`
 }
 
-//Requestable interface for post
+// Requestable interface for post
 type Requestable interface {
 	body() (io.Reader, error)
 	uri() string
 }
 
-//SendCode contains the information to send login code
+// SendCode contains the information to send login code
 type SendCode struct {
 	Email string `json:"mobi"`
 }
@@ -162,7 +163,7 @@ func (p push) uri() string {
 	return "push/rePush/bat"
 }
 
-//AliyunConfig get aliyun oss upload configuration
+// AliyunConfig get aliyun oss upload configuration
 type AliyunConfig struct {
 }
 
@@ -217,7 +218,7 @@ func (m me) body() (io.Reader, error) {
 	return nil, nil
 }
 
-//SignUp contain the information for user to login boox
+// SignUp contain the information for user to login boox
 type SignUp struct {
 	Email string `json:"mobi"`
 	Code  string `json:"code"`
@@ -235,7 +236,7 @@ func (s SignUp) uri() string {
 	return "users/signupByPhoneOrEmail"
 }
 
-//Send code to email
+// Send code to email
 func (b *Boox) Send(email string) error {
 	body := SendCode{Email: email}
 
@@ -251,7 +252,7 @@ func (b *Boox) Send(email string) error {
 	return nil
 }
 
-//LoginBoox login to boox with email and code
+// LoginBoox login to boox with email and code
 //
 // error
 // string token
