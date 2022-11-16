@@ -486,8 +486,7 @@ func request(r *http.Request, t string) ([]byte, error) {
 
 	rsb, err := io.ReadAll(resp.Body)
 	if bot.Debug {
-		rqb, _ := io.ReadAll(r.Body)
-		log.Printf("Endpoint: %s, request: %s,response:%s", r.URL, string(rqb), string(rsb))
+		log.Printf("Endpoint: %s,response:%s", r.URL, string(rsb))
 	}
 
 	return rsb, err
