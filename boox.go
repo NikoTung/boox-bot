@@ -272,9 +272,15 @@ func (b *Boox) LoginBoox(email string, code string) (error, string, string) {
 	var t token
 	err = json.Unmarshal(r.Data, &t)
 
-	//expired user
-	if err == nil && (len(b.uid()) > 0) {
-		err = b.User.UpdateToken(b.uid(), t.Token)
+	if err != nil {
+		return err, "", ""
+	}
+
+	log.Println("Update user %s token.", b.User.Id)
+	err = b.User.UpdateToken(b.uid(), t.Token)
+
+	if err != nil {
+		return err, "", ""
 	}
 
 	err, mi := b.meInfo(me{})
@@ -324,7 +330,7 @@ func (bx *Boox) post(param Requestable) (error, *BooxResponse) {
 	}
 
 	if !br.isSuccess() {
-		log.Printf("[POST] Request to %s with data %s, failed with result %s.", param.uri(), param, br.Message)
+		log.Printf("[POST] Request to %s with data %s headers %s, failed with result %s.", param.uri(), param, r.Header, br.Message)
 	}
 	return nil, &br
 }
@@ -353,7 +359,7 @@ func (b *Boox) get(param Requestable) (error, *BooxResponse) {
 		return err, nil
 	}
 	if !br.isSuccess() {
-		log.Printf("[GET] Request to %s wit data %s, failed with result %s.", param.uri(), param, br.Message)
+		log.Printf("[GET] Request to %s with data %s, headers %s, failed with result %s.", param.uri(), param, r.Header, br.Message)
 	}
 	return nil, &br
 }

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	_ "github.com/go-sql-driver/mysql"
 	"log"
 	"os"
@@ -100,6 +101,25 @@ func (u *User) IsLogin() bool {
 
 func (u *User) UpdateToken(uid, token string) error {
 
+	exp, err := parseToken(token)
+	if err != nil {
+		return err
+	}
+
+	_, err = db.Exec("UPdate user set token=?,boox_uid=?,expire_at=? where id=? ", token, uid, exp, u.Id)
+	if err != nil {
+		log.Println("update token error", err)
+		return err
+	}
+
+	u.Expire = exp
+	u.Token = token
+	u.BooxUid = uid
+
+	return nil
+}
+
+func parseToken(token string)(exp int64, err error)  {
 	li := strings.LastIndex(token, ".")
 	fi := strings.Index(token, ".")
 
@@ -107,28 +127,20 @@ func (u *User) UpdateToken(uid, token string) error {
 		m := token[fi+1 : li-1]
 		d, err := base64.StdEncoding.DecodeString(m)
 		if err != nil {
-			return err
-
+			return 0, err
 		}
 
 		var s sign
 		err = json.Unmarshal(d, &s)
 		if err != nil {
-			return err
+			return 0, err
 		}
-		u.Expire = s.Exp
+
+		return exp, nil
 	}
 
-	_, err := db.Exec("UPdate user set token=?,boox_uid=? where id=? ", token, uid, u.Id)
-	if err != nil {
-		log.Println("update token error", err)
-		return err
-	}
+	return 0, errors.New("Parse token failed!")
 
-	u.Token = token
-	u.BooxUid = uid
-
-	return nil
 }
 
 func (u *User) UpdateEmail(email string) {
