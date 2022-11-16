@@ -124,7 +124,7 @@ func parseToken(token string)(exp int64, err error)  {
 	fi := strings.Index(token, ".")
 
 	if li != -1 && fi != -1 && li != fi {
-		m := token[fi+1 : li-1]
+		m := token[fi+1 : li]
 		d, err := base64.StdEncoding.DecodeString(m)
 		if err != nil {
 			return 0, err
