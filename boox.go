@@ -283,12 +283,16 @@ func (b *Boox) LoginBoox(email string, code string) (error, string, string) {
 		return err, "", ""
 	}
 
+	if bot.Debug {
+		log.Printf("Get user %v info with token %s .", b.User, b.token())
+	}
+
 	err, mi := b.meInfo(me{})
 	if err != nil {
 		return err, "", ""
 	}
 
-	log.Printf("Login uid %s with token %s\n", mi.Uid, t)
+	log.Printf("Login uid %s with token %s", mi.Uid, t)
 
 	return err, t.Token, mi.Uid
 }
@@ -331,6 +335,22 @@ func (bx *Boox) post(param Requestable) (error, *BooxResponse) {
 	if !br.isSuccess() {
 		log.Printf("[POST] Request to %s with data %s headers %s, failed with result %s.", param.uri(), param, r.Header, br.Message)
 	}
+	if bot.Debug {
+		responseBody := "No data"
+		if br.Data != nil {
+			responseBody = string(br.Data)
+		}
+
+		requestBody := "nil"
+		rb, err := param.body()
+		if err != nil {
+			b, _ := io.ReadAll(rb)
+			requestBody = string(b)
+		}
+
+		log.Printf("Endpoint: %s request headers: %s,request body: %s,response message: %s,response data: %s",
+			fullEndpoint, r.Header, requestBody, br.Message, responseBody)
+	}
 	return nil, &br
 }
 
@@ -358,6 +378,13 @@ func (b *Boox) get(param Requestable) (error, *BooxResponse) {
 	}
 	if !br.isSuccess() {
 		log.Printf("[GET] Request to %s with data %s, headers %s, failed with result %s.", param.uri(), param, r.Header, br.Message)
+	}
+	if bot.Debug {
+		responseBody := "No data"
+		if br.Data != nil {
+			responseBody = string(br.Data)
+		}
+		log.Printf("Endpoint: %s request header: %s,response message: %s, response data: %s", fullEndpoint, r.Header, br.Message, responseBody)
 	}
 	return nil, &br
 }
@@ -484,10 +511,5 @@ func request(r *http.Request, t string) ([]byte, error) {
 		return nil, err
 	}
 
-	rsb, err := io.ReadAll(resp.Body)
-	if bot.Debug {
-		log.Printf("Endpoint: %s,response:%s", r.URL, string(rsb))
-	}
-
-	return rsb, err
+	return io.ReadAll(resp.Body)
 }
