@@ -137,7 +137,7 @@ func parseToken(token string)(exp int64, err error)  {
 			return 0, err
 		}
 
-		return exp, nil
+		return s.Exp, nil
 	}
 
 	return 0, errors.New("Parse token failed!")
